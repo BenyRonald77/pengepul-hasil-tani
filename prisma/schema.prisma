@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Petani {
+  id         Int      @id @default(autoincrement())
+  nama       String
+  noHp       String?
+  alamat     String?
+  dibuatPada String
+  setoran    Setoran[]
+  ledger     Ledger[]
+  periode    PeriodeBayar[]
+}
+
+model Komoditas {
+  id        Int      @id @default(autoincrement())
+  nama      String   @unique
+  satuan    String   @default("kg")
+  harga     HargaHarian[]
+  setoran   Setoran[]
+}
+
+model HargaHarian {
+  id                  Int       @id @default(autoincrement())
+  komoditasId         Int
+  komoditas           Komoditas @relation(fields: [komoditasId], references: [id], onDelete: Cascade)
+  tanggal             String
+  hargaBeliPerSatuan  Int
+  hargaJualPerSatuan  Int
+
+  @@unique([komoditasId, tanggal])
+  @@index([tanggal])
+}
+
+model Setoran {
+  id                 Int       @id @default(autoincrement())
+  petaniId           Int
+  petani             Petani    @relation(fields: [petaniId], references: [id], onDelete: Cascade)
+  komoditasId        Int
+  komoditas          Komoditas @relation(fields: [komoditasId], references: [id], onDelete: Restrict)
+  tanggal            String
+  beratKg            Float
+  hargaBeliSaatSetor Int
+  totalRp            Int
+  status             String    @default("tercatat")
+
+  @@index([tanggal])
+  @@index([petaniId])
+}
+
+model Ledger {
+  id         Int    @id @default(autoincrement())
+  petaniId   Int
+  petani     Petani @relation(fields: [petaniId], references: [id], onDelete: Cascade)
+  tanggal    String
+  jenis      String
+  keterangan String?
+  nominalRp  Int
+
+  @@index([petaniId])
+  @@index([tanggal])
+}
+
+model PeriodeBayar {
+  id               Int    @id @default(autoincrement())
+  petaniId         Int
+  petani           Petani @relation(fields: [petaniId], references: [id], onDelete: Cascade)
+  tanggalMulai     String
+  tanggalSelesai   String
+  totalSetoranRp   Int
+  totalPotonganRp  Int
+  totalKasbonRp    Int
+  dibayarRp        Int     @default(0)
+  status           String  @default("draft")
+  dibuatPada       String
+}
